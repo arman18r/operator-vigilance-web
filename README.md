@@ -86,6 +86,10 @@ This is the **public web deployment repository**. Browser-delivered HTML, CSS, J
 
 For bugs and suggestions, use the repository's [Issues](https://github.com/arman18r/operator-vigilance-web/issues) section, if enabled.
 
+## Privacy
+
+For details about camera access, local processing, data storage, and third-party services, please read our [Privacy Policy](PRIVACY.md).
+
 ---
 
 <div align="center"><sub>Developed as an experimental computer-vision monitoring application.</sub></div>
