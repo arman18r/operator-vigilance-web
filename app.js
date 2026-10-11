@@ -71,8 +71,52 @@ set("mouthRatio",mouth.toFixed(3));set("mouthDuration",mouthTime.toFixed(1));set
 set("headTilt",tilt.toFixed(1));set("headDrop",drop.toFixed(3));set("headPitch",pitch===null?"--":pitch.toFixed(1));set("headDuration",headTime.toFixed(1));chip("headStatus",headLabel,!baseline?"neutral":dropProblem||pitchProblem?"danger":tiltProblem?"caution":"safe");}
 function noFace(){ctx.clearRect(0,0,canvas.width,canvas.height);resetTimers();if(!baseline){calibrationStart=null;calibrationSamples=[];showCalibration("waiting");}chip("eyeStatus","NO FACE");chip("mouthStatus","NO FACE");chip("headStatus","NO FACE");set("headPitch","--");overall("NO FACE");$("overall").className="status idle";set("faceBadge","NO FACE");}
 function loop(){if(!running)return;if(video.readyState>=2&&video.currentTime!==lastVideoTime){lastVideoTime=video.currentTime;const now=performance.now(),ts=Math.max(now,lastTimestamp+1);lastTimestamp=ts;try{const result=model.detectForVideo(video,ts);if(result.faceLandmarks?.length){set("faceBadge","FACE DETECTED");analyze(result.faceLandmarks[0],now,estimatePitch(result));updateCalibrationOverlay(now);}else noFace();}catch(e){console.error(e);set("feedback",`Detection error: ${e.message}`);stop();return;}}raf=requestAnimationFrame(loop);}
-async function start(){if(running)return;$("startBtn").disabled=true;set("feedback","Loading MediaPipe model...");try{if(!model){const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.0/wasm");model=await FaceLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:"./models/face_landmarker.task",delegate:"CPU"},runningMode:"VIDEO",numFaces:1,outputFacialTransformationMatrixes:true,minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5});}set("feedback","Requesting camera permission...");stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:960},height:{ideal:720}},audio:false});video.srcObject=stream;await video.play();canvas.width=video.videoWidth;canvas.height=video.videoHeight;$("placeholder").hidden=true;$("stopBtn").disabled=false;$("calibrateBtn").disabled=false;resetTimers();recalibrate(false);lastVideoTime=-1;lastTimestamp=-1;running=true;set("faceBadge","SEARCHING FOR FACE");set("feedback","Monitoring locally. Face the camera and keep your head straight during calibration.");if(C.soundEnabled){try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();await audioCtx.resume();}catch(e){console.warn(e);}}loop();}catch(e){console.error(e);set("feedback",`Error: ${e.message}`);stop();}}
-function stop(){running=false;$("calibrationOverlay").hidden=true;calibrationCompleteAt=null;if(raf!==null)cancelAnimationFrame(raf);raf=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;ctx.clearRect(0,0,canvas.width,canvas.height);$("placeholder").hidden=false;$("startBtn").disabled=false;$("stopBtn").disabled=true;$("calibrateBtn").disabled=true;set("faceBadge","CAMERA OFF");overall("STOPPED");$("overall").className="status idle";resetTimers();}
+let loadingTicker=null,loadingSince=0;
+function loadingStage(step,title,description){
+ const overlay=$("loadingOverlay");overlay.hidden=false;
+ set("loadingTitle",title);set("loadingDescription",description);
+ for(let i=1;i<=3;i++){const el=$("loadStep"+i);el.classList.toggle("done",i<step);el.classList.toggle("active",i===step);}
+}
+function showLoading(){
+ loadingSince=performance.now();$("loadingRetry").hidden=true;
+ loadingStage(1,"Starting face detection","Preparing the AI runtime. On the first visit, required files may take a little longer to download.");
+ clearInterval(loadingTicker);
+ const tick=()=>{const seconds=Math.floor((performance.now()-loadingSince)/1000);set("loadingElapsed",`Elapsed: ${seconds}s`);if(seconds>=12&&!$("loadingOverlay").hidden){$("loadingDescription").textContent="Still working. Initial downloads can be slower on some connections; please keep this page open.";}};
+ tick();loadingTicker=setInterval(tick,1000);
+}
+function hideLoading(){clearInterval(loadingTicker);loadingTicker=null;$("loadingOverlay").hidden=true;}
+function loadingError(message){
+ clearInterval(loadingTicker);loadingTicker=null;
+ loadingStage(3,"Could not start monitoring",message+" Check your connection and camera permissions, then try again.");
+ $("loadingRetry").hidden=false;
+}
+async function start(){
+ if(running)return;
+ $("startBtn").disabled=true;showLoading();set("feedback","Preparing AI runtime and model...");
+ try{
+  if(!model){
+   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.0/wasm");
+   loadingStage(2,"Loading face model","Downloading and initializing the face detection model. This may take longer on the first visit.");
+   model=await FaceLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:"./models/face_landmarker.task",delegate:"CPU"},runningMode:"VIDEO",numFaces:1,outputFacialTransformationMatrixes:true,minFaceDetectionConfidence:.5,minFacePresenceConfidence:.5,minTrackingConfidence:.5});
+  }else loadingStage(2,"Face model ready","Reusing the model already loaded in this tab.");
+  loadingStage(3,"Connecting your camera","Allow camera access if your browser asks for permission.");
+  set("feedback","Requesting camera permission...");
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:960},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  $("placeholder").hidden=true;$("stopBtn").disabled=false;$("calibrateBtn").disabled=false;
+  resetTimers();recalibrate(false);lastVideoTime=-1;lastTimestamp=-1;running=true;
+  set("faceBadge","SEARCHING FOR FACE");set("feedback","Monitoring locally. Face the camera and keep your head straight during calibration.");
+  hideLoading();
+  if(C.soundEnabled){try{audioCtx??=new(window.AudioContext||window.webkitAudioContext)();await audioCtx.resume();}catch(e){console.warn(e);}}
+  loop();
+ }catch(e){
+  console.error(e);
+  const reason=e.name==="NotAllowedError"?"Camera permission was denied.":e.name==="NotFoundError"?"No available camera was found.":e.message||"An unknown error occurred.";
+  stop();set("feedback",`Startup error: ${reason}`);loadingError(reason);
+ }
+}
+$("loadingRetry").addEventListener("click",()=>{hideLoading();start();});
+function stop(){running=false;hideLoading();$("calibrationOverlay").hidden=true;calibrationCompleteAt=null;if(raf!==null)cancelAnimationFrame(raf);raf=null;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.srcObject=null;ctx.clearRect(0,0,canvas.width,canvas.height);$("placeholder").hidden=false;$("startBtn").disabled=false;$("stopBtn").disabled=true;$("calibrateBtn").disabled=true;set("faceBadge","CAMERA OFF");overall("STOPPED");$("overall").className="status idle";resetTimers();}
 function resetCounters(){blinkCount=yawnCount=0;events=[];renderEvents();set("blinkCount","0");set("yawnCount","0");logEvent("RESET","COUNTERS AND HISTORY CLEARED");}
 function exportCSV(){const esc=s=>'"'+String(s).replaceAll('"','""')+'"';const lines=[["Timestamp","Time","Event","Value"],...events.map(e=>[e.iso,e.time,e.type,e.value])];const csv="\uFEFF"+lines.map(row=>row.map(esc).join(",")).join("\r\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="vigilance_history.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $("startBtn").addEventListener("click",start);$("stopBtn").addEventListener("click",stop);$("calibrateBtn").addEventListener("click",()=>recalibrate(true));$("resetBtn").addEventListener("click",resetCounters);$("exportBtn").addEventListener("click",exportCSV);$("volume").addEventListener("input",e=>{C.volume=Number(e.target.value);set("volumeValue",`${C.volume}%`);persistSettings();});

@@ -18,3 +18,60 @@
 .calibration-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#46aaff,#58e4cc);transition:width .12s linear}
 .calibration-overlay.complete .calibration-countdown{color:#53e7ad;font-size:54px;letter-spacing:0}
 @media(max-width:600px){.calibration-card{padding:15px 17px}.calibration-countdown{font-size:56px}.calibration-title{font-size:16px}}
+
+/* v4.2: friendly loading experience; stages represent milestones, not fake download percentages */
+.loading-overlay{position:absolute;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(5,13,26,.92);text-align:center}
+.loading-overlay[hidden]{display:none!important}
+.loading-card{width:min(380px,100%);padding:22px 20px;border:1px solid rgba(107,178,237,.38);border-radius:20px;background:#101f34;box-shadow:0 14px 40px rgba(0,0,0,.4);color:#f0f7ff}
+.loading-spinner{width:42px;height:42px;margin:0 auto 12px;border:4px solid rgba(106,193,255,.18);border-top-color:#69c8ff;border-radius:50%;animation:loading-spin .85s linear infinite}
+@keyframes loading-spin{to{transform:rotate(360deg)}}
+.loading-kicker{font-size:10px;letter-spacing:1.5px;font-weight:700;color:#76c7ff}
+.loading-card h2{margin:9px 0;font-size:19px;line-height:1.25;color:#fff}
+.loading-card p{font-size:12px;line-height:1.5;color:#c9d8e9;margin:8px 0}
+.loading-steps{display:grid;gap:6px;margin:15px auto 12px;max-width:280px;text-align:left}
+.loading-step{display:flex;align-items:center;gap:10px;padding:6px 9px;border-radius:8px;font-size:12px;color:#9bb1c8;background:rgba(255,255,255,.025)}
+.loading-step.active{color:#f2f8ff;background:rgba(84,179,255,.14)}
+.loading-step.done{color:#69e4bc}
+.step-dot{width:9px;height:9px;flex-shrink:0;border-radius:50%;background:#57677b}
+.loading-step.active .step-dot{background:#69c8ff;box-shadow:0 0 0 4px rgba(105,200,255,.12)}
+.loading-step.done .step-dot{background:#69e4bc}
+.loading-elapsed{font-size:12px;color:#9fc6e8;font-variant-numeric:tabular-nums}
+.loading-card .loading-help{font-size:11px;color:#a6b9ce}
+.loading-retry{margin-top:10px;padding:9px 18px;border:1px solid #69c8ff;border-radius:9px;background:#163f61;color:#fff;cursor:pointer}
+.loading-retry[hidden]{display:none!important}
+@media(max-width:500px){.loading-card{padding:15px 12px}.loading-card h2{font-size:16px}.loading-steps{margin:9px auto}.loading-step{padding:4px 8px}.loading-card p{margin:5px 0}}
+
+/* v4.3: unobtrusive calibration overlay leaves face and camera framing visible */
+.calibration-overlay{background:transparent;align-items:flex-end;justify-content:center;padding:12px;z-index:5}
+.calibration-card{width:min(275px,82%);padding:9px 13px 11px;border-radius:13px;background:rgba(8,20,36,.77);box-shadow:0 5px 18px rgba(0,0,0,.24);backdrop-filter:blur(3px)}
+.calibration-symbol{display:none}
+.calibration-title{font-size:13px;margin:0}
+.calibration-countdown{font-size:36px;letter-spacing:-1px;margin:2px 0}
+.calibration-instruction{font-size:11px;line-height:1.3}
+.calibration-progress{margin-top:7px;height:4px}
+.calibration-overlay.complete .calibration-countdown{font-size:30px}
+@media(max-width:600px){.calibration-card{width:min(235px,80%);padding:7px 10px}.calibration-countdown{font-size:30px}}
+/* Display preferences */
+.display-preferences{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;font-size:13px;color:inherit}
+.display-preferences label{display:flex;align-items:center;gap:7px}
+.display-preferences select{padding:8px;border-radius:8px;border:1px solid #50617b;background:#1c2b3f;color:#fff}
+.display-preferences button{padding:8px 12px}
+html[dir="rtl"] .wrap{direction:rtl}
+html[dir="rtl"] .history table{text-align:right}
+html[dir="rtl"] .camera,html[dir="rtl"] .loading-overlay{direction:ltr}
+html[dir="rtl"] .calibration-card{direction:rtl}
+html[dir="rtl"] .loading-card{direction:rtl}
+html[dir="rtl"] .loading-steps{text-align:right}
+html[data-theme="light"]{background:#f3f6fb;color:#1c2c40}
+html[data-theme="light"] body{background:#f3f6fb;color:#1c2c40}
+html[data-theme="light"] .panel{background:#fff;border-color:#d6e0eb}
+html[data-theme="light"] .metric-grid>div{background:#edf3fa}
+html[data-theme="light"] .metric-grid small,html[data-theme="light"] .calibration,html[data-theme="light"] footer,html[data-theme="light"] footer small,html[data-theme="light"] .top p,html[data-theme="light"] .history-head p,html[data-theme="light"] .feedback{color:#50647c}
+html[data-theme="light"] th{color:#53657a}
+html[data-theme="light"] td{color:#23374d;border-color:#dce5ef}
+html[data-theme="light"] .sound-row{color:#31465e;border-color:#dce5ef}
+html[data-theme="light"] .display-preferences select{background:#fff;color:#20334a;border-color:#aabbd0}
+html[data-theme="light"] .settings-panel,html[data-theme="light"] .settings-panel p,html[data-theme="light"] .settings-panel label{color:#20334a}
+html[data-theme="light"] .settings-panel fieldset{border-color:#c8d7e6}
+html[data-theme="light"] .settings-panel input[type="number"]{background:#f6f9fd;color:#20334a;border-color:#bacadd}
+html[data-theme="light"] .status.idle,html[data-theme="light"] .chip.neutral{background:#e1e9f3;color:#3c526b}
